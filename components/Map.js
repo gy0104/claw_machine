@@ -125,7 +125,7 @@ export default function KakaoMap() {
           boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
         }}
       >
-        ♡ Claw Machine 위치 ♡
+        주석이를 위한 Claw Machine 위치 ♡
       </div>
 
       {selectedPlace && (
