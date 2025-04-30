@@ -4,7 +4,6 @@ export default function KakaoMap() {
   const [locations, setLocations] = useState([]);
   const [selectedPlace, setSelectedPlace] = useState(null);
 
-  // 1. CSV 로드
   useEffect(() => {
     fetch('/locations.csv')
       .then((res) => res.text())
@@ -18,7 +17,6 @@ export default function KakaoMap() {
       });
   }, []);
 
-  // 2. 지도 및 마커 초기화
   useEffect(() => {
     if (!locations.length) return;
     if (document.getElementById('kakao-map-script')) return;
@@ -37,7 +35,7 @@ export default function KakaoMap() {
 
         const geocoder = new window.kakao.maps.services.Geocoder();
 
-        // 3. 내 위치로 지도 이동
+        // 현재 위치 이동
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -53,7 +51,7 @@ export default function KakaoMap() {
               });
             },
             () => {
-              // 실패 시 첫 장소로 fallback
+              // 실패 시 첫 장소 fallback
               geocoder.addressSearch(locations[0].address, (result, status) => {
                 if (status === window.kakao.maps.services.Status.OK) {
                   const lat = result[0].y;
@@ -65,12 +63,13 @@ export default function KakaoMap() {
           );
         }
 
-        // 4. 마커 렌더링
+        // 마커 생성
         locations.forEach(({ name, address }) => {
           geocoder.addressSearch(address, (result, status) => {
             if (status === window.kakao.maps.services.Status.OK) {
               const lat = result[0].y;
               const lng = result[0].x;
+
               const marker = new window.kakao.maps.Marker({
                 position: new window.kakao.maps.LatLng(lat, lng),
                 map,
@@ -78,16 +77,7 @@ export default function KakaoMap() {
 
               const infowindow = new window.kakao.maps.InfoWindow({
                 content: `
-                  <div style="
-                    display: flex;
-                    align-items: center;
-                    padding: 8px;
-                    background: white;
-                    border: 1px solid #ccc;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-                    font-family: sans-serif;
-                  ">
+                  <div style="display: flex; align-items: center; padding: 8px; background: white; border: 1px solid #ccc; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,0.15); font-family: sans-serif;">
                     <img src="/claw-machine.png" width="40" height="40" style="margin-right: 8px;" />
                     <div>
                       <div style="font-weight: bold; font-size: 14px;">${name}</div>
@@ -106,7 +96,7 @@ export default function KakaoMap() {
               });
 
               window.kakao.maps.event.addListener(marker, 'click', () => {
-                setSelectedPlace({ name, address });
+                setSelectedPlace({ name, address, lat, lng });
               });
             }
           });
@@ -118,18 +108,7 @@ export default function KakaoMap() {
   }, [locations]);
 
   return (
-    <div
-      style={{
-        width: '375px',
-        height: '667px',
-        margin: '0 auto',
-        border: '1px solid #ccc',
-        borderRadius: '16px',
-        position: 'relative',
-        overflow: 'hidden',
-        fontFamily: 'sans-serif',
-      }}
-    >
+    <div style={{ width: '100%', height: '100%', position: 'relative', fontFamily: 'sans-serif' }}>
       <div id="map" style={{ width: '100%', height: '100%' }} />
 
       {selectedPlace && (
@@ -162,8 +141,12 @@ export default function KakaoMap() {
             </button>
           </div>
           <div style={{ fontSize: '14px', color: '#666' }}>{selectedPlace.address}</div>
+
           <div style={{ marginTop: '12px' }}>
-            <button
+            <a
+              href={`https://map.kakao.com/link/to/${selectedPlace.name},${selectedPlace.lat},${selectedPlace.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
               style={{
                 padding: '8px 16px',
                 background: '#007bff',
@@ -171,11 +154,12 @@ export default function KakaoMap() {
                 border: 'none',
                 borderRadius: '4px',
                 fontSize: '14px',
+                textDecoration: 'none',
+                display: 'inline-block',
               }}
-              onClick={() => alert(`'${selectedPlace.name}'로 길찾기 실행`)}
             >
-              길찾기
-            </button>
+              Kakao Navi로 길찾기
+            </a>
           </div>
         </div>
       )}
