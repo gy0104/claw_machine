@@ -4,6 +4,7 @@ export default function KakaoMap() {
   const [locations, setLocations] = useState([]);
   const [selectedPlace, setSelectedPlace] = useState(null);
 
+  // 1. CSV 로드
   useEffect(() => {
     fetch('/locations.csv')
       .then((res) => res.text())
@@ -17,6 +18,7 @@ export default function KakaoMap() {
       });
   }, []);
 
+  // 2. 지도 및 마커 초기화
   useEffect(() => {
     if (!locations.length) return;
     if (document.getElementById('kakao-map-script')) return;
@@ -33,7 +35,9 @@ export default function KakaoMap() {
           level: 5,
         });
 
-                // ✅ 사용자 위치로 지도 중심 이동
+        const geocoder = new window.kakao.maps.services.Geocoder();
+
+        // 3. 내 위치로 지도 이동
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -42,36 +46,31 @@ export default function KakaoMap() {
               const userLoc = new window.kakao.maps.LatLng(lat, lng);
               map.setCenter(userLoc);
 
-              // ✅ 현재 위치 마커 추가 (선택)
               new window.kakao.maps.Marker({
                 position: userLoc,
                 map: map,
-                title: "내 위치",
+                title: '내 위치',
               });
             },
-            (err) => {
-              console.warn("위치 정보 접근 실패:", err.message);
+            () => {
+              // 실패 시 첫 장소로 fallback
+              geocoder.addressSearch(locations[0].address, (result, status) => {
+                if (status === window.kakao.maps.services.Status.OK) {
+                  const lat = result[0].y;
+                  const lng = result[0].x;
+                  map.setCenter(new window.kakao.maps.LatLng(lat, lng));
+                }
+              });
             }
           );
         }
 
-        const geocoder = new window.kakao.maps.services.Geocoder();
-
-        // ✅ 첫 위치로 지도 중심 설정
-        geocoder.addressSearch(locations[0].address, (result, status) => {
-          if (status === window.kakao.maps.services.Status.OK) {
-            const lat = result[0].y;
-            const lng = result[0].x;
-            map.setCenter(new window.kakao.maps.LatLng(lat, lng));
-          }
-        });
-
+        // 4. 마커 렌더링
         locations.forEach(({ name, address }) => {
           geocoder.addressSearch(address, (result, status) => {
             if (status === window.kakao.maps.services.Status.OK) {
               const lat = result[0].y;
               const lng = result[0].x;
-
               const marker = new window.kakao.maps.Marker({
                 position: new window.kakao.maps.LatLng(lat, lng),
                 map,
