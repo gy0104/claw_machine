@@ -110,6 +110,23 @@ export default function KakaoMap() {
   return (
     <div style={{ width: '100%', height: '100%', position: 'relative', fontFamily: 'sans-serif' }}>
       <div id="map" style={{ width: '100%', height: '100%' }} />
+      <div
+        style={{
+          position: 'absolute',
+          top: '12px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          zIndex: 100,
+          background: 'rgba(255,255,255,0.9)',
+          padding: '8px 16px',
+          borderRadius: '12px',
+          fontSize: '18px',
+          fontWeight: '600',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+        }}
+      >
+        ♡ Claw Machine 위치 ♡
+      </div>
 
       {selectedPlace && (
         <div
