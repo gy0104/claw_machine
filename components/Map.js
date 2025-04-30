@@ -33,6 +33,28 @@ export default function KakaoMap() {
           level: 5,
         });
 
+                // ✅ 사용자 위치로 지도 중심 이동
+        if (navigator.geolocation) {
+          navigator.geolocation.getCurrentPosition(
+            (position) => {
+              const lat = position.coords.latitude;
+              const lng = position.coords.longitude;
+              const userLoc = new window.kakao.maps.LatLng(lat, lng);
+              map.setCenter(userLoc);
+
+              // ✅ 현재 위치 마커 추가 (선택)
+              new window.kakao.maps.Marker({
+                position: userLoc,
+                map: map,
+                title: "내 위치",
+              });
+            },
+            (err) => {
+              console.warn("위치 정보 접근 실패:", err.message);
+            }
+          );
+        }
+
         const geocoder = new window.kakao.maps.services.Geocoder();
 
         // ✅ 첫 위치로 지도 중심 설정
