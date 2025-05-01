@@ -8,7 +8,7 @@ export default function Home() {
     <>
       <Head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>주석이를 위한 Claw Machine 위치 ♡</title>
+        <title>Claw Machine</title>
       </Head>
 
       <main
