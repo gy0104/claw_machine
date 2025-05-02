@@ -1,8 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 
 export default function KakaoMap() {
   const [locations, setLocations] = useState([]);
   const [selectedPlace, setSelectedPlace] = useState(null);
+  const [searchInput, setSearchInput] = useState('');
+  const mapRef = useRef(null); // 지도 객체 저장용
+  const geocoderRef = useRef(null); // 지오코더 저장용
+
+  const goToMyLocation = () => {
+    if (!navigator.geolocation || !mapRef.current) return;
+
+    navigator.geolocation.getCurrentPosition((position) => {
+      const lat = position.coords.latitude;
+      const lng = position.coords.longitude;
+      const coord = new window.kakao.maps.LatLng(lat, lng);
+      mapRef.current.setCenter(coord);
+    });
+  };
+
+  const handleSearch = () => {
+    if (!searchInput || !geocoderRef.current || !mapRef.current) return;
+
+    geocoderRef.current.addressSearch(searchInput, (result, status) => {
+      if (status === window.kakao.maps.services.Status.OK) {
+        const lat = result[0].y;
+        const lng = result[0].x;
+        const coord = new window.kakao.maps.LatLng(lat, lng);
+        mapRef.current.setCenter(coord);
+      } else {
+        alert('주소를 찾을 수 없습니다.');
+      }
+    });
+  };
 
   useEffect(() => {
     fetch('/locations.csv')
@@ -32,10 +61,9 @@ export default function KakaoMap() {
           center: new window.kakao.maps.LatLng(37.5665, 126.9780),
           level: 5,
         });
+        mapRef.current = map;
+        geocoderRef.current = new window.kakao.maps.services.Geocoder();
 
-        const geocoder = new window.kakao.maps.services.Geocoder();
-
-        // 현재 위치 이동
         if (navigator.geolocation) {
           navigator.geolocation.getCurrentPosition(
             (position) => {
@@ -44,15 +72,21 @@ export default function KakaoMap() {
               const userLoc = new window.kakao.maps.LatLng(lat, lng);
               map.setCenter(userLoc);
 
+              const markerImage = new window.kakao.maps.MarkerImage(
+                '/icons/red-marker.png',
+                new window.kakao.maps.Size(40, 40),
+                { offset: new window.kakao.maps.Point(20, 40) }
+              );
+
               new window.kakao.maps.Marker({
                 position: userLoc,
                 map: map,
                 title: '내 위치',
+                image: markerImage,
               });
             },
             () => {
-              // 실패 시 첫 장소 fallback
-              geocoder.addressSearch(locations[0].address, (result, status) => {
+              geocoderRef.current.addressSearch(locations[0].address, (result, status) => {
                 if (status === window.kakao.maps.services.Status.OK) {
                   const lat = result[0].y;
                   const lng = result[0].x;
@@ -63,9 +97,8 @@ export default function KakaoMap() {
           );
         }
 
-        // 마커 생성
         locations.forEach(({ name, address }) => {
-          geocoder.addressSearch(address, (result, status) => {
+          geocoderRef.current.addressSearch(address, (result, status) => {
             if (status === window.kakao.maps.services.Status.OK) {
               const lat = result[0].y;
               const lng = result[0].x;
@@ -108,26 +141,79 @@ export default function KakaoMap() {
   }, [locations]);
 
   return (
-    <div style={{ width: '100%', height: '100%', position: 'relative', fontFamily: 'sans-serif' }}>
+    <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <div id="map" style={{ width: '100%', height: '100%' }} />
+
+      {/* 상단 검색창 */}
       <div
         style={{
           position: 'absolute',
-          top: '12px',
+          top: 60,
           left: '50%',
           transform: 'translateX(-50%)',
           zIndex: 100,
-          background: 'rgba(255,255,255,0.9)',
-          padding: '8px 16px',
+          background: 'white',
           borderRadius: '12px',
-          fontSize: '18px',
-          fontWeight: '600',
-          boxShadow: '0 2px 6px rgba(0,0,0,0.1)',
+          padding: '8px',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.15)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
         }}
       >
-        Claw Machine 위치 🩵
+        <input
+          type="text"
+          placeholder="장소 검색"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          style={{
+            height: '32px',
+            padding: '0 10px',
+            borderRadius: '6px',
+            border: '1px solid #ccc',
+            fontSize: '14px',
+            minWidth: '200px',
+          }}
+        />
+        <button
+          onClick={handleSearch}
+          style={{
+            padding: '6px 12px',
+            borderRadius: '6px',
+            background: '#007bff',
+            color: 'white',
+            fontSize: '14px',
+            border: 'none',
+            cursor: 'pointer',
+          }}
+        >
+          검색
+        </button>
       </div>
 
+      {/* 내 위치 이동 버튼 */}
+      <div
+        onClick={goToMyLocation}
+        style={{
+          position: 'absolute',
+          bottom: 20,
+          right: 20,
+          width: 48,
+          height: 48,
+          borderRadius: '50%',
+          background: 'white',
+          boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          zIndex: 100,
+          cursor: 'pointer',
+        }}
+      >
+        <img src="/icons/locate-me.png" alt="내 위치" width="24" height="24" />
+      </div>
+
+      {/* 선택된 장소 정보 카드 */}
       {selectedPlace && (
         <div
           style={{
@@ -158,7 +244,6 @@ export default function KakaoMap() {
             </button>
           </div>
           <div style={{ fontSize: '14px', color: '#666' }}>{selectedPlace.address}</div>
-
           <div style={{ marginTop: '12px' }}>
             <a
               href={`https://map.kakao.com/link/to/${selectedPlace.name},${selectedPlace.lat},${selectedPlace.lng}`}
