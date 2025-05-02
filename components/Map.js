@@ -57,7 +57,7 @@ export default function KakaoMap() {
   };
 
   useEffect(() => {
-    fetch('/locations.csv')
+    fetch('/cleaned_locations.csv')
       .then((res) => res.text())
       .then((text) => {
         const rows = text.trim().split('\n').slice(1);
