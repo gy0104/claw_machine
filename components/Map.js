@@ -72,8 +72,8 @@ export default function KakaoMap() {
     if (!locations.length) return;
 
     const script = document.createElement('script');
-    script.src =
-      'https://dapi.kakao.com/v2/maps/sdk.js?appkey=de127fbb75841fde9ae8ace99d1678c7&autoload=false&libraries=services';
+    const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY;
+    script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoKey}&autoload=false&libraries=services`;
     script.onload = () => {
       window.kakao.maps.load(() => {
         const container = document.getElementById('map');
