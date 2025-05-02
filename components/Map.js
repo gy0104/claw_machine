@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import { db } from '../firebase';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
 
 export default function KakaoMap() {
   const mapRef = useRef(null);
@@ -6,6 +8,8 @@ export default function KakaoMap() {
   const [searchInput, setSearchInput] = useState('');
   const [selectedPlace, setSelectedPlace] = useState(null);
   const [locations, setLocations] = useState([]);
+  const [reviewInput, setReviewInput] = useState('');
+  const [storedReview, setStoredReview] = useState('');
 
   const goToMyLocation = () => {
     if (!navigator.geolocation || !mapRef.current) return;
@@ -24,24 +28,41 @@ export default function KakaoMap() {
   
     ps.keywordSearch(searchInput, (data, status) => {
       if (status === window.kakao.maps.services.Status.OK) {
-        const { y, x } = data[0]; // 첫 번째 결과만 사용
+        const { y, x } = data[0];
         const center = new window.kakao.maps.LatLng(y, x);
-        mapRef.current.setLevel(4); // 줌인
+        mapRef.current.setLevel(4);
         mapRef.current.setCenter(center);
       } else {
         alert('검색 결과가 없습니다.');
       }
     });
   };
-  
+
+  const loadReview = async (storeId) => {
+    const docRef = doc(db, 'reviews', storeId);
+    const snap = await getDoc(docRef);
+    if (snap.exists()) {
+      setStoredReview(snap.data().text);
+    } else {
+      setStoredReview('');
+    }
+  };
+
+  const saveReview = async (storeId) => {
+    const docRef = doc(db, 'reviews', storeId);
+    await setDoc(docRef, { text: reviewInput });
+    setStoredReview(reviewInput);
+    setReviewInput('');
+  };
+
   useEffect(() => {
     fetch('/locations.csv')
       .then((res) => res.text())
       .then((text) => {
         const rows = text.trim().split('\n').slice(1);
         const data = rows.map((row) => {
-          const [name, address] = row.split(',');
-          return { name, address };
+          const [store_id, name, address] = row.split(',');
+          return { store_id, name, address };
         });
         setLocations(data);
       });
@@ -64,7 +85,6 @@ export default function KakaoMap() {
         mapRef.current = map;
         geocoderRef.current = new window.kakao.maps.services.Geocoder();
 
-        // 내 위치 마커
         navigator.geolocation.getCurrentPosition(
           (pos) => {
             const lat = pos.coords.latitude;
@@ -90,8 +110,7 @@ export default function KakaoMap() {
           }
         );
 
-        // 데이터 마커
-        locations.forEach(({ name, address }) => {
+        locations.forEach(({ store_id, name, address }) => {
           geocoderRef.current.addressSearch(address, (result, status) => {
             if (status === window.kakao.maps.services.Status.OK) {
               const lat = result[0].y;
@@ -112,7 +131,8 @@ export default function KakaoMap() {
                 infowindow.close();
               });
               window.kakao.maps.event.addListener(marker, 'click', () => {
-                setSelectedPlace({ name, address, lat, lng });
+                setSelectedPlace({ store_id, name, address, lat, lng });
+                loadReview(store_id);
               });
             }
           });
@@ -140,8 +160,7 @@ export default function KakaoMap() {
           display: 'flex',
           gap: '8px',
           boxShadow: '0 2px 6px rgba(0,0,0,0.2)',
-        }}
-      >
+        }}>
         <input
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
@@ -170,8 +189,7 @@ export default function KakaoMap() {
           alignItems: 'center',
           cursor: 'pointer',
           zIndex: 10,
-        }}
-      >
+        }}>
         <img src="/icons/locate-me.png" width="24" height="24" />
       </div>
 
@@ -190,14 +208,12 @@ export default function KakaoMap() {
             zIndex: 100,
             minWidth: '280px',
             maxWidth: '90%',
-          }}
-        >
+          }}>
           <div style={{ display: 'flex', justifyContent: 'space-between' }}>
             <strong>{selectedPlace.name}</strong>
             <button
               onClick={() => setSelectedPlace(null)}
-              style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}
-            >
+              style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}>
               ×
             </button>
           </div>
@@ -214,11 +230,37 @@ export default function KakaoMap() {
                 textDecoration: 'none',
                 borderRadius: '6px',
                 display: 'inline-block',
-              }}
-            >
+              }}>
               길찾기
             </a>
           </div>
+
+          {/* ✍️ 리뷰 입력 & 표시 */}
+          <div style={{ marginTop: '16px' }}>
+            <textarea
+              value={reviewInput}
+              onChange={(e) => setReviewInput(e.target.value)}
+              placeholder="리뷰를 남겨보세요"
+              style={{ width: '100%', padding: '8px', fontSize: '14px', borderRadius: '6px', border: '1px solid #ccc' }}
+            />
+            <button onClick={() => saveReview(selectedPlace.store_id)} style={{
+              marginTop: '8px',
+              padding: '6px 12px',
+              background: '#007bff',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer',
+            }}>
+              리뷰 등록
+            </button>
+          </div>
+
+          {storedReview && (
+            <div style={{ marginTop: '12px', fontSize: '14px', color: '#444' }}>
+              📌 <strong>리뷰:</strong> {storedReview}
+            </div>
+          )}
         </div>
       )}
     </div>
