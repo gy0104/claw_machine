@@ -17,11 +17,20 @@ export default function KakaoMap() {
     });
   };
 
-  // ✅ 카카오맵으로 검색 이동
   const handleSearch = () => {
-    if (!searchInput) return;
-    const encoded = encodeURIComponent(searchInput.trim());
-    window.open(`https://map.kakao.com/?q=${encoded}`, '_blank');
+    if (!searchInput || !geocoderRef.current || !mapRef.current) return;
+  
+    geocoderRef.current.addressSearch(searchInput, (result, status) => {
+      if (status === window.kakao.maps.services.Status.OK) {
+        const lat = result[0].y;
+        const lng = result[0].x;
+        const center = new window.kakao.maps.LatLng(lat, lng);
+        mapRef.current.setLevel(4); // 지도 확대 레벨
+        mapRef.current.setCenter(center);
+      } else {
+        alert('주소를 찾을 수 없습니다.');
+      }
+    });
   };
 
   useEffect(() => {
