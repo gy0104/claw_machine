@@ -68,10 +68,24 @@ export default function KakaoMap() {
       });
   }, []);
 
-  console.log('Kakao API KEY:', process.env.NEXT_PUBLIC_KAKAO_MAP_KEY);
+  console.log('Kakao API KEY:', process.env.NEXT_PUBLIC_KAKAO_MAP_KEY); // 키 확인
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (window.kakao && window.kakao.maps) {
+        console.log('✅ Kakao Maps SDK 로드 완료');
+        clearInterval(interval);
+      } else {
+        console.log('⏳ SDK 아직 로딩 안 됨');
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, []);
+  
+  // 지도 로딩 useEffect (기존 코드 그대로)
   useEffect(() => {
     if (!locations.length) return;
-
+  
     const script = document.createElement('script');
     const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY;
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoKey}&autoload=false&libraries=services`;
