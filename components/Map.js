@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { db } from '../firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 
+console.log('✅ ENV KEY:', process.env.NEXT_PUBLIC_KAKAO_MAP_KEY);
 export default function KakaoMap() {
   const mapRef = useRef(null);
   const geocoderRef = useRef(null);
@@ -87,7 +88,7 @@ export default function KakaoMap() {
     if (!locations.length) return;
   
     const script = document.createElement('script');
-    const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_MAP_API_KEY;
+    const kakaoKey = process.env.NEXT_PUBLIC_KAKAO_MAP_KEY;
     script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoKey}&autoload=false&libraries=services`;
     script.onload = () => {
       window.kakao.maps.load(() => {
