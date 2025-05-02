@@ -119,11 +119,11 @@ export default function KakaoMap() {
                 map,
                 position: new window.kakao.maps.LatLng(lat, lng),
               });
-
+        
               const infowindow = new window.kakao.maps.InfoWindow({
                 content: `<div style="padding:6px;font-size:13px;"><strong>${name}</strong><br/>${address}</div>`,
               });
-
+        
               window.kakao.maps.event.addListener(marker, 'mouseover', () => {
                 infowindow.open(map, marker);
               });
@@ -134,6 +134,8 @@ export default function KakaoMap() {
                 setSelectedPlace({ store_id, name, address, lat, lng });
                 loadReview(store_id);
               });
+            } else {
+              console.warn('❌ 주소 변환 실패:', name, address);
             }
           });
         });
