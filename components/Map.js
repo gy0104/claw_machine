@@ -17,17 +17,11 @@ export default function KakaoMap() {
     });
   };
 
+  // ✅ 카카오맵으로 검색 이동
   const handleSearch = () => {
-    if (!searchInput || !geocoderRef.current || !mapRef.current) return;
-    geocoderRef.current.addressSearch(searchInput, (result, status) => {
-      if (status === window.kakao.maps.services.Status.OK) {
-        const lat = result[0].y;
-        const lng = result[0].x;
-        mapRef.current.setCenter(new window.kakao.maps.LatLng(lat, lng));
-      } else {
-        alert('주소를 찾을 수 없습니다');
-      }
-    });
+    if (!searchInput) return;
+    const encoded = encodeURIComponent(searchInput.trim());
+    window.open(`https://map.kakao.com/?q=${encoded}`, '_blank');
   };
 
   useEffect(() => {
@@ -69,7 +63,7 @@ export default function KakaoMap() {
             map.setCenter(loc);
 
             const image = new window.kakao.maps.MarkerImage(
-              '/icons/pin.png',
+              '/icons/red-marker.png',
               new window.kakao.maps.Size(40, 40),
               { offset: new window.kakao.maps.Point(20, 40) }
             );
@@ -98,11 +92,7 @@ export default function KakaoMap() {
               });
 
               const infowindow = new window.kakao.maps.InfoWindow({
-                content: `
-                  <div style="padding:6px;font-size:13px;">
-                    <strong>${name}</strong><br/>${address}
-                  </div>
-                `,
+                content: `<div style="padding:6px;font-size:13px;"><strong>${name}</strong><br/>${address}</div>`,
               });
 
               window.kakao.maps.event.addListener(marker, 'mouseover', () => {
@@ -126,7 +116,7 @@ export default function KakaoMap() {
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       <div id="map" style={{ width: '100%', height: '100%' }} />
 
-      {/* 검색창 */}
+      {/* 🔍 검색창 */}
       <div
         style={{
           position: 'absolute',
@@ -153,7 +143,7 @@ export default function KakaoMap() {
         </button>
       </div>
 
-      {/* 내 위치 버튼 */}
+      {/* 📍 내 위치 이동 버튼 */}
       <div
         onClick={goToMyLocation}
         style={{
@@ -175,29 +165,50 @@ export default function KakaoMap() {
         <img src="/icons/locate-me.png" width="24" height="24" />
       </div>
 
-      {/* 장소 카드 */}
+      {/* 🪟 팝업 카드 */}
       {selectedPlace && (
         <div
           style={{
             position: 'absolute',
-            bottom: 0,
-            width: '100%',
-            background: '#fff',
-            padding: '16px',
-            boxShadow: '0 -2px 8px rgba(0,0,0,0.1)',
-            zIndex: 10,
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            background: 'white',
+            padding: '20px',
+            borderRadius: '12px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+            zIndex: 100,
+            minWidth: '280px',
+            maxWidth: '90%',
           }}
         >
-          <strong>{selectedPlace.name}</strong>
-          <p>{selectedPlace.address}</p>
-          <a
-            href={`https://map.kakao.com/link/to/${selectedPlace.name},${selectedPlace.lat},${selectedPlace.lng}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{ color: '#007bff' }}
-          >
-            길찾기
-          </a>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <strong>{selectedPlace.name}</strong>
+            <button
+              onClick={() => setSelectedPlace(null)}
+              style={{ background: 'none', border: 'none', fontSize: '20px', cursor: 'pointer' }}
+            >
+              ×
+            </button>
+          </div>
+          <div style={{ marginTop: '8px', fontSize: '14px', color: '#555' }}>{selectedPlace.address}</div>
+          <div style={{ marginTop: '12px' }}>
+            <a
+              href={`https://map.kakao.com/link/to/${selectedPlace.name},${selectedPlace.lat},${selectedPlace.lng}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                padding: '8px 12px',
+                background: '#007bff',
+                color: 'white',
+                textDecoration: 'none',
+                borderRadius: '6px',
+                display: 'inline-block',
+              }}
+            >
+              길찾기
+            </a>
+          </div>
         </div>
       )}
     </div>
