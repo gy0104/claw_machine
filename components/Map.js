@@ -20,15 +20,16 @@ export default function KakaoMap() {
   const handleSearch = () => {
     if (!searchInput || !geocoderRef.current || !mapRef.current) return;
   
-    geocoderRef.current.addressSearch(searchInput, (result, status) => {
+    const ps = new window.kakao.maps.services.Places();
+  
+    ps.keywordSearch(searchInput, (data, status) => {
       if (status === window.kakao.maps.services.Status.OK) {
-        const lat = result[0].y;
-        const lng = result[0].x;
-        const center = new window.kakao.maps.LatLng(lat, lng);
-        mapRef.current.setLevel(4); // 지도 확대 레벨
+        const { y, x } = data[0]; // 첫 번째 결과만 사용
+        const center = new window.kakao.maps.LatLng(y, x);
+        mapRef.current.setLevel(4); // 줌인
         mapRef.current.setCenter(center);
       } else {
-        alert('주소를 찾을 수 없습니다.');
+        alert('검색 결과가 없습니다.');
       }
     });
   };
@@ -72,7 +73,7 @@ export default function KakaoMap() {
             map.setCenter(loc);
 
             const image = new window.kakao.maps.MarkerImage(
-              '/icons/red-marker.png',
+              '/icons/location-pin.png',
               new window.kakao.maps.Size(40, 40),
               { offset: new window.kakao.maps.Point(20, 40) }
             );
