@@ -140,20 +140,24 @@ export default function KakaoMap() {
           () => console.log('위치 접근 실패')
         );
 
-        locations.forEach(({ store_id, name, address }) => {
-          geocoderRef.current.addressSearch(address, (result, status) => {
-            if (status === window.kakao.maps.services.Status.OK) {
-              const lat = result[0].y;
-              const lng = result[0].x;
+        locations.forEach(async ({ store_id, name, address }) => {
+          try {
+            const res = await fetch(`/api/kakao-address?query=${encodeURIComponent(address)}`);
+            const data = await res.json();
+        
+            if (data.documents && data.documents.length > 0) {
+              const lat = data.documents[0].y;
+              const lng = data.documents[0].x;
+        
               const marker = new window.kakao.maps.Marker({
                 map,
                 position: new window.kakao.maps.LatLng(lat, lng),
               });
-
+        
               const infowindow = new window.kakao.maps.InfoWindow({
                 content: `<div style="padding:6px;font-size:13px;"><strong>${name}</strong><br/>${address}</div>`,
               });
-
+        
               window.kakao.maps.event.addListener(marker, 'mouseover', () => infowindow.open(map, marker));
               window.kakao.maps.event.addListener(marker, 'mouseout', () => infowindow.close());
               window.kakao.maps.event.addListener(marker, 'click', () => {
@@ -161,9 +165,11 @@ export default function KakaoMap() {
                 loadReviews(store_id);
               });
             } else {
-              console.warn('❌ 주소 변환 실패:', name, address);
+              console.warn('❌ 주소 변환 실패 (프록시)', name, address);
             }
-          });
+          } catch (err) {
+            console.error('❌ 프록시 주소 변환 오류', name, address, err);
+          }
         });
       });
     };
