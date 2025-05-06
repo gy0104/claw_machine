@@ -81,7 +81,12 @@ export default function KakaoMap() {
         const rows = text.trim().split('\n').slice(1);
         const data = rows.map((row) => {
           const [store_id, name, addressRaw] = row.split(',');
-          const address = addressRaw.trim(); // 🛠 여기가 핵심 수정
+          const address = addressRaw
+            .replace(/\r/g, '')
+            .replace(/\s+/g, ' ')
+            .replace(/"/g, '')
+            .trim();
+  
           return { store_id, name, address };
         });
         setLocations(data);
